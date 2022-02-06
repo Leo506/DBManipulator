@@ -1,0 +1,5 @@
+bin/
+DBTest/
+obj/
+*.csproj
+*.vs/
