@@ -41,7 +41,7 @@ namespace DBTest
         public List<Player> GetAllPlayers()
         {
             List<Player> players = new List<Player>();
-            MySqlDataReader reader = ExecuteCommandWithReader("SELECT * FROM PlayerInfo;");
+            MySqlDataReader reader = ExecuteCommandWithReader("call showAllPlayers();");
             while(reader.Read())
             {
                 // 0 - id
@@ -69,7 +69,7 @@ namespace DBTest
         public List<PlayerSettings> GetAllPlayersSettings()
         {
             List<PlayerSettings> settings = new List<PlayerSettings>();
-            MySqlDataReader reader = ExecuteCommandWithReader("SELECT * FROM PlayerSettings;");
+            MySqlDataReader reader = ExecuteCommandWithReader("call showAllPlayersSettings();");
             while (reader.Read())
             {
                 int id = int.Parse(reader[0].ToString());
@@ -91,7 +91,7 @@ namespace DBTest
         /// <returns></returns>
         public PlayerSettings GetPlayerSettings(int playerId)
         {
-            MySqlDataReader reader = ExecuteCommandWithReader($"SELECT * FROM PlayerSettings WHERE id_player={playerId};");
+            MySqlDataReader reader = ExecuteCommandWithReader($"call getPlayerSettings({playerId});");
             PlayerSettings settings = new PlayerSettings();
             while(reader.Read())
             {
@@ -114,11 +114,8 @@ namespace DBTest
         {
             string online = player.lastOnline.ToString("yyyy-MM-dd HH:mm:ss");
             string registrate = player.registrationDate.ToString("yyyy-MM-dd HH:mm:ss");
-            string sql = "INSERT INTO PlayerInfo (email, password, last_online, registration_date) " +
-                $"VALUES (\"{player.email}\", \"{player.password}\", \"{online}\", \"{registrate}\");";
-            string sql2 = "INSERT INTO PlayerSettings (id_player) VALUES ((SELECT id_player FROM playerInfo ORDER BY id_player DESC LIMIT 1))";
+            string sql = $"call addNewPlayer(\"{player.email}\", \"{player.password}\", \"{online}\", \"{registrate}\");";
             ExecuteCommand(sql);
-            ExecuteCommand(sql2);
         }
 
 
@@ -131,7 +128,7 @@ namespace DBTest
         {
             int sound = settings.soundOn ? 1 : 0;
             int music = settings.musicOn ? 1 : 0;
-            string sql = $"UPDATE PlayerSettings SET sounds={sound}, music={music}, language=\"{settings.language}\" WHERE id_player={playerID};";
+            string sql = $"call setSettings({playerID}, {sound}, {music}, \"{settings.language}\");";
             ExecuteCommand(sql);
         }
 
@@ -150,9 +147,9 @@ namespace DBTest
 
             string sql = "";
             if (countOfPurchaces == 0)
-                sql = $"insert into playerpurchace (id_player, id_product) values ({playerID}, {productID});";
+                sql = $"call firstPurchase({playerID}, {productID});";
             else
-                sql = $"update playerpurchace set count = {++countOfPurchaces} where id_player={playerID} and id_product={productID};";
+                sql = $"call playerPurchace({playerID}, {productID}, {++countOfPurchaces});";
 
             ExecuteCommand(sql);
         }
@@ -167,7 +164,7 @@ namespace DBTest
         public int GetPlayerPurchace(int playerID, int productID)
         {
             int count = 0;
-            object obj = ExecuteCommandWithScalar($"select count from playerpurchace where id_player={playerID} and id_product={productID};");
+            object obj = ExecuteCommandWithScalar($"call getPlayerPurchace({playerID}, {productID});");
             if (obj != null)
                 count = int.Parse(obj.ToString());
 
